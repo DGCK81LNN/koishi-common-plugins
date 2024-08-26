@@ -1,52 +1,36 @@
 {
-  "name": "koishi-plugin-forward",
-  "version": "4.2.0",
-  "description": "Forward plugin for Koishi",
+  "name": "@dgck81lnn/koishi-plugin-forward",
+  "version": "1.0.0",
+  "description": "fork of the Forward plugin for Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "src"
   ],
-  "contributors": [
-    "Shigma <shigma10826@gmail.com>",
-    "anillc"
-  ],
   "license": "MIT",
-  "homepage": "https://common.koishi.chat/plugins/forward.html",
   "repository": {
     "type": "git",
-    "url": "https://github.com/koishijs/common.git",
+    "url": "https://github.com/DGCK81LNN/koishi-common-plugins.git",
     "directory": "packages/forward"
   },
-  "bugs": {
-    "url": "https://github.com/koishijs/common/issues"
-  },
-  "keywords": [
-    "bot",
-    "chatbot",
-    "koishi",
-    "plugin",
-    "relay",
-    "forward",
-    "common"
-  ],
   "koishi": {
     "description": {
-      "en": "Forward messages across channels",
-      "zh": "在不同的频道间转发消息"
+      "en": "Forward messages across channels (fork)",
+      "zh": "在不同的频道间转发消息 (fork)"
     },
     "locales": [
       "zh"
     ]
   },
   "devDependencies": {
-    "@koishijs/plugin-database-memory": "^3.0.0",
-    "@koishijs/plugin-help": "^2.4.3",
-    "@koishijs/plugin-mock": "^2.6.5",
-    "koishi": "^4.17.2"
+    "@koishijs/assets": "^1.1.2",
+    "@koishijs/plugin-database-memory": "^3.4.0",
+    "@koishijs/plugin-help": "^2.4.4",
+    "@koishijs/plugin-mock": "^2.6.6",
+    "koishi": "^4.17.11"
   },
   "peerDependencies": {
-    "koishi": "^4.17.2"
+    "koishi": "^4.17.11"
   }
 }

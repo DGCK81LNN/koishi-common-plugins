@@ -1,4 +1,5 @@
 import { Command, Context, Dict, Schema, segment, Session, Time } from 'koishi'
+import type {} from '@koishijs/assets'
 
 declare module 'koishi' {
   interface Channel {
@@ -21,6 +22,10 @@ export const Rule: Schema<Rule> = Schema.object({
 }).description('转发规则。')
 
 export const name = 'forward'
+
+export const inject = {
+  optional: ['database', 'assets']
+}
 
 export interface Config {
   mode?: 'database' | 'config'
@@ -53,8 +58,7 @@ export function apply(ctx: Context, config: Config) {
   const relayMap: Dict<Rule> = {}
 
   async function sendRelay(session: Session<never, 'forward'>, rule: Partial<Rule>) {
-    const { author, stripped } = session
-    let { content } = stripped
+    let { author, content } = session
     if (!content) return
 
     try {
@@ -71,17 +75,24 @@ export function apply(ctx: Context, config: Config) {
       const bot = ctx.bots[`${platform}:${rule.selfId}`]
 
       // replace all mentions (koishijs/koishi#506)
-      if (segment.select(stripped.content, 'at').length) {
-        const dict = await session.bot.getGuildMemberMap(session.guildId)
-        content = segment.transform(content, {
-          at(attrs) {
+      if (segment.select(content, 'at').length) {
+        const dict = Object.create(null)
+        content = await segment.transformAsync(content, {
+          async at(attrs) {
             if (!attrs.id) return true
-            return '@' + dict[attrs.id]
+            let name = dict[attrs.id]
+            if (name === undefined) {
+              const gm = await session.bot.getGuildMember(session.guildId, attrs.id)
+              name = dict[attrs.id] = gm.nick || gm.user.name || gm.user.username || attrs.id
+            }
+            return segment('i', '@' + dict[attrs.id])
           },
         })
       }
 
-      content = `${author.name}: ${content}`
+      if (ctx.assets) content = await ctx.assets.transform(content)
+      const authorName = author.nick || author.name || author.user.name || author.user.username || author.user.id
+      content = `<b>\u2068${authorName}\u2069:</b> \u2068${content}`
       await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
         for (const id of ids) {
           relayMap[id] = {
@@ -100,7 +111,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.middleware(async (session: Session<never, 'forward'>, next) => {
     const { quote = {}, isDirect } = session
-    if (isDirect) return
+    if (isDirect) return next()
     const data = relayMap[quote.id]
     if (data) return sendRelay(session, data)
 
