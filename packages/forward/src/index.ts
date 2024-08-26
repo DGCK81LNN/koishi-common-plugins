@@ -52,13 +52,21 @@ export const Config: Schema<Config> = Schema.intersect([
   }),
 ] as const)
 
+interface Msg {
+  platform: string
+  channelId: string
+  guildId: string
+  messageId: string
+}
+
 export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
 
-  const relayMap: Dict<Rule> = {}
+  const relayMap: Dict<Rule> = Object.create(null)
+  const msgMap: Dict<Msg[]> = Object.create(null)
 
   async function sendRelay(session: Session<never, 'forward'>, rule: Partial<Rule>) {
-    let { author, content } = session
+    let { author, content, quote } = session
     if (!content) return
 
     try {
@@ -80,10 +88,11 @@ export function apply(ctx: Context, config: Config) {
         content = await segment.transformAsync(content, {
           async at(attrs) {
             if (!attrs.id) return true
-            let name = dict[attrs.id]
-            if (name === undefined) {
-              const gm = await session.bot.getGuildMember(session.guildId, attrs.id)
-              name = dict[attrs.id] = gm.nick || gm.user.name || attrs.id
+            if (!(attrs.id in dict)) {
+              const gm = await session.bot
+                .getGuildMember(session.guildId, attrs.id)
+                .catch(() => null)
+              dict[attrs.id] = gm?.nick || gm?.user.name || attrs.id
             }
             return segment('i', '@' + dict[attrs.id])
           },
@@ -91,19 +100,47 @@ export function apply(ctx: Context, config: Config) {
       }
 
       if (ctx.assets) content = await ctx.assets.transform(content)
-      const authorName = author.nick || author.name || author.user.name || author.user.id
-      content = `<b>\u2068${authorName}\u2069:</b> \u2068${content}`
-      await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
-        for (const id of ids) {
-          relayMap[id] = {
-            source: rule.target,
-            target: session.cid,
-            selfId: session.selfId,
-            guildId: session.guildId,
-          }
-          ctx.setTimeout(() => delete relayMap[id], config.replyTimeout)
+      const authorName = author.nick || author.name || author.id
+      let quoteEl: segment | "" = ""
+      if (quote) {
+        const msg = msgMap[`${session.channelId}:${quote.id}`].find(
+          msg => msg.platform === platform && msg.channelId === channelId
+        )
+        if (msg) quoteEl = segment.quote(msg.messageId)
+      }
+      content = `${quoteEl}<b>\u2068${authorName}\u2069:</b> \u2068${content}`
+      const ids = await bot.sendMessage(channelId, content, rule.guildId)
+      if (ids.length) {
+        const cmid = `${session.channelId}:${session.messageId}`
+        if (!msgMap[cmid]) {
+          msgMap[cmid] = []
+          ctx.setTimeout(() => delete msgMap[cmid], config.replyTimeout)
         }
-      })
+        msgMap[cmid].push({
+          platform,
+          channelId,
+          guildId: rule.guildId,
+          messageId: ids[0],
+        })
+      }
+      for (const id of ids) {
+        relayMap[`${channelId}:${id}`] = {
+          source: rule.target,
+          target: session.cid,
+          selfId: session.selfId,
+          guildId: session.guildId,
+        }
+        msgMap[`${channelId}:${id}`] = [{
+          platform: session.platform,
+          channelId: session.channelId,
+          guildId: session.guildId,
+          messageId: session.messageId,
+        }]
+        ctx.setTimeout(() => {
+          delete relayMap[`${channelId}:${id}`]
+          delete msgMap[`${channelId}:${id}`]
+        }, config.replyTimeout)
+      }
     } catch (error) {
       ctx.logger('forward').warn(error)
     }
@@ -112,7 +149,7 @@ export function apply(ctx: Context, config: Config) {
   ctx.middleware(async (session: Session<never, 'forward'>, next) => {
     const { quote = {}, isDirect } = session
     if (isDirect) return next()
-    const data = relayMap[quote.id]
+    const data = relayMap[`${session.channelId}:${quote.id}`]
     if (data) return sendRelay(session, data)
 
     const tasks: Promise<void>[] = []

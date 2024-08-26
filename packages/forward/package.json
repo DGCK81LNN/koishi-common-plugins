@@ -1,6 +1,6 @@
 {
   "name": "@dgck81lnn/koishi-plugin-forward",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "fork of the Forward plugin for Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
