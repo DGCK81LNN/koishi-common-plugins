@@ -83,7 +83,7 @@ export function apply(ctx: Context, config: Config) {
             let name = dict[attrs.id]
             if (name === undefined) {
               const gm = await session.bot.getGuildMember(session.guildId, attrs.id)
-              name = dict[attrs.id] = gm.nick || gm.user.name || gm.user.username || attrs.id
+              name = dict[attrs.id] = gm.nick || gm.user.name || attrs.id
             }
             return segment('i', '@' + dict[attrs.id])
           },
@@ -91,7 +91,7 @@ export function apply(ctx: Context, config: Config) {
       }
 
       if (ctx.assets) content = await ctx.assets.transform(content)
-      const authorName = author.nick || author.name || author.user.name || author.user.username || author.user.id
+      const authorName = author.nick || author.name || author.user.name || author.user.id
       content = `<b>\u2068${authorName}\u2069:</b> \u2068${content}`
       await bot.sendMessage(channelId, content, rule.guildId).then((ids) => {
         for (const id of ids) {
