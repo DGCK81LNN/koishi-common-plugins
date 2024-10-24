@@ -1,4 +1,4 @@
-import { Context, Dict, Schema } from 'koishi'
+import { Context, Dict, Schema, h } from 'koishi'
 import {} from '@koishijs/plugin-help'
 
 export interface Config {
@@ -6,7 +6,7 @@ export interface Config {
 }
 
 export const Config: Schema<Config> = Schema.object({
-  aliases: Schema.dict(String).hidden(),
+  aliases: Schema.dict(String),
 })
 
 export const name = 'alias'
@@ -15,9 +15,11 @@ export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
 
   function createAlias(name: string, command: string) {
-    return ctx.command(name, { hidden: true })
+    const desc = `(→ ${command.split(" ", 1)[0]}${command.includes(" ") ? " ..." : ""})`
+    return ctx.command(name, desc, { hidden: true, slash: false })
+      .usage(h.escape(command))
       .action(async ({ session, source }) => {
-        await session.execute(command + source.slice(name.length))
+        return session.execute(command + source.slice(name.length), true)
       })
   }
 
