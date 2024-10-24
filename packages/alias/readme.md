@@ -1,9 +1,9 @@
-# [koishi-plugin-alias](https://common.koishi.chat/plugins/alias.html)
- 
-[![npm](https://img.shields.io/npm/v/koishi-plugin-alias?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-alias)
+# @dgck81lnn/koishi-plugin-alias
 
-适用于 Koishi 的 alias(1)。创建和管理指令别名。
+[![npm](https://img.shields.io/npm/v/@dgck81lnn/koishi-plugin-alias?style=flat-square)](https://www.npmjs.com/package/@dgck81lnn/koishi-plugin-alias)
 
-## 文档
+fork 自 [koishi-plugin-alias](https://npmjs.com/package/koishi-plugin-alias)
 
-<https://common.koishi.chat/plugins/alias.html>
+* 为别名指令添加了描述和用法字段，显示其原指令
+* 别名指令默认 `slash: false`
+* 在插件配置中显示别名指令列表
