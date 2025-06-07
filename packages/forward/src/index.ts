@@ -252,7 +252,6 @@ export function apply(ctx: Context, config: Config) {
       )
       if (!msgs?.length) return
       for (const msg of msgs) {
-        ctx.logger.debug({ config, msg })
         const handling = Object.hasOwn(config.platformMutationHandling, msg.platform)
           && config.platformMutationHandling[msg.platform]
           || config.defaultMutationHandling
@@ -304,7 +303,6 @@ export function apply(ctx: Context, config: Config) {
       async ({ platform, channelId, guildId, selfId, messageIds, onDelete }) => {
         const bot = ctx.bots[`${platform}:${selfId}`]
         if (!bot) return
-        ctx.logger.debug("%o", onDelete)
         if (onDelete === "delete") try {
           messageIds = messageIds.slice(0)
           while (messageIds.length) {
